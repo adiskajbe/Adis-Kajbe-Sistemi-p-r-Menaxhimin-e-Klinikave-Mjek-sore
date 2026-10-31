@@ -1,0 +1,13 @@
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+# Editor and operating-system files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+# Local runtime artifacts
+*.log
+*.cache
+.codex-backup-*/
