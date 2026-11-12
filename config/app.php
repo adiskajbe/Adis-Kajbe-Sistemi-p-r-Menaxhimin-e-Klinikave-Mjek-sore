@@ -22,4 +22,8 @@ if ($appRoot !== false && $documentRoot !== false) {
 
 if (!defined('APP_BASE_URL')) {
     define('APP_BASE_URL', rtrim($baseUrl, '/'));
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742

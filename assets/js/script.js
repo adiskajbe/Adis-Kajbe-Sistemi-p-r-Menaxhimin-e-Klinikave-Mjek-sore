@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 document.addEventListener('DOMContentLoaded', function() {
     // Konfirmimi për fshirje (mos e fshi këtë, është funksionaliteti yt)
     document.querySelectorAll('[data-confirm]').forEach((form) => {
@@ -32,3 +33,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+=======
+document.querySelectorAll('[data-confirm]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    const message = form.getAttribute('data-confirm') || 'A dëshironi të vazhdoni?';
+    if (!window.confirm(message)) event.preventDefault();
+  });
+});
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742

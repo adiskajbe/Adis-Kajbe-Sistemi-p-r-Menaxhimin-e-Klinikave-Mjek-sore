@@ -22,6 +22,10 @@ function take_flash(): ?array
     if (!isset($_SESSION['flash_message'])) {
         return null;
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     $flash = $_SESSION['flash_message'];
     unset($_SESSION['flash_message']);
     return $flash;
@@ -32,6 +36,10 @@ function csrf_token(): string
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return $_SESSION['csrf_token'];
 }
 
@@ -64,6 +72,10 @@ function valid_patient_fields(array $input): array
     if ($values['email'] !== '' && (!filter_var($values['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($values['email']) > 190)) {
         $errors[] = 'Shkruani një adresë email të vlefshme, deri në 190 karaktere.';
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return [$values, $errors];
 }
 
@@ -93,6 +105,10 @@ function valid_doctor_fields(array $input): array
     if ($values['email'] !== '' && (!filter_var($values['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($values['email']) > 190)) {
         $errors[] = 'Shkruani një adresë email të vlefshme, deri në 190 karaktere.';
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return [$values, $errors];
 }
 
@@ -134,6 +150,10 @@ function valid_appointment_fields(array $input): array
     if (mb_strlen($values['shenime']) > 2000) {
         $errors[] = 'Shënimet duhet të kenë deri në 2000 karaktere.';
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return [$values, $errors];
 }
 

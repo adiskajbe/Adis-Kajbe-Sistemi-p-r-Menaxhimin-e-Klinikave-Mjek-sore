@@ -11,7 +11,11 @@ $activePage = $activePage ?? '';
     <title><?= h($pageTitle) ?> | Menaxhimi i Klinikave</title>
     <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/style.css">
 </head>
+<<<<<<< HEAD
 <body class="page-<?= h($activePage ?: 'home') ?>">
+=======
+<body>
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     <header class="site-header">
         <div class="header-inner">
             <a class="brand" href="<?= h(APP_BASE_URL) ?>/index.php">
@@ -26,4 +30,8 @@ $activePage = $activePage ?? '';
             </nav>
         </div>
     </header>
+<<<<<<< HEAD
     <main class="page-shell">
+=======
+    <main class="page-shell">
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742

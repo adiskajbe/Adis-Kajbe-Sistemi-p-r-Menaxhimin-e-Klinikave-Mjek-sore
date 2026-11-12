@@ -1,4 +1,11 @@
+<<<<<<< HEAD
 CREATE DATABASE IF NOT EXISTS klinika_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+=======
+CREATE DATABASE IF NOT EXISTS klinika_db
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
 USE klinika_db;
 
 CREATE TABLE IF NOT EXISTS pacienti (
@@ -38,6 +45,15 @@ CREATE TABLE IF NOT EXISTS termini (
   PRIMARY KEY (id_termini),
   KEY idx_termini_pacienti (id_pacienti),
   KEY idx_termini_mjeku_data (id_mjeku, data_ora),
+<<<<<<< HEAD
   CONSTRAINT fk_termini_pacienti FOREIGN KEY (id_pacienti) REFERENCES pacienti (id_pacienti) ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT fk_termini_mjeku FOREIGN KEY (id_mjeku) REFERENCES mjeku (id_mjeku) ON UPDATE CASCADE ON DELETE RESTRICT
+=======
+  CONSTRAINT fk_termini_pacienti
+    FOREIGN KEY (id_pacienti) REFERENCES pacienti (id_pacienti)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_termini_mjeku
+    FOREIGN KEY (id_mjeku) REFERENCES mjeku (id_mjeku)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

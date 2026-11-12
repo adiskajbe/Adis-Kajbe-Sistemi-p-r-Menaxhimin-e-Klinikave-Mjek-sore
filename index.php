@@ -18,6 +18,7 @@ if ($pdo instanceof PDO) {
 
 include __DIR__ . '/includes/header.php';
 ?>
+<<<<<<< HEAD
 <section class="hero hero-photo">
     <div class="hero-copy">
         <p class="eyebrow">SISTEMI PËR MENAXHIMIN E KLINIKAVE MJEKËSORE</p>
@@ -43,6 +44,19 @@ include __DIR__ . '/includes/header.php';
         <img src="<?= h(APP_BASE_URL) ?>/assets/img/appointments.jpg" alt="Dhoma e vizitave në klinikë" loading="lazy">
         <div><p class="eyebrow">F-03 · F-04</p><h3>Terminet</h3><p>Caktim, filtrim sipas datës ose mjekut.</p></div>
     </a>
+=======
+<section class="hero">
+    <div class="hero-copy">
+        <p class="eyebrow">FAZA FILLESTARE</p>
+        <h1>Organizoni të dhënat e klinikës në një vend.</h1>
+        <p>Ky version vendos bazën e aplikacionit dhe përfshin regjistrimin, kërkimin dhe mirëmbajtjen e të dhënave të pacientëve.</p>
+        <a class="button button-primary" href="<?= h(APP_BASE_URL) ?>/pacientet/lista.php">Hap listën e pacientëve <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="medical-card"><span class="medical-cross">+</span><span class="medical-line"></span><span class="medical-line short"></span><span class="medical-dot"></span></div>
+    </div>
+>>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
 </section>
 
 <?php if (!$pdo instanceof PDO): ?>
