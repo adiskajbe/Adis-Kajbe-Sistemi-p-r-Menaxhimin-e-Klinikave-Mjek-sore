@@ -1,0 +1,155 @@
+<?php
+require_once __DIR__ . '/includes/bootstrap.php';
+
+if (!empty($_SESSION['auth_user']['id'])) {
+    redirect_to('/index.php');
+}
+
+$authReady = false;
+$accountCount = 0;
+$formError = '';
+$identity = '';
+$flash = take_flash();
+
+if ($pdo instanceof PDO) {
+    try {
+        $accountCount = (int) $pdo->query('SELECT COUNT(*) FROM perdorues')->fetchColumn();
+        $authReady = true;
+    } catch (Throwable $exception) {
+        error_log('Tabela e autentifikimit nuk u lexua: ' . $exception->getMessage());
+    }
+}
+
+if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $identity = strtolower(trim((string) ($_POST['identity'] ?? '')));
+    $password = (string) ($_POST['password'] ?? '');
+
+    if (!valid_csrf_token($_POST['csrf_token'] ?? null)) {
+        $formError = 'Seanca e formularit skadoi. Rifreskojeni faqen dhe provoni përsëri.';
+    } elseif ($identity === '' || $password === '') {
+        $formError = 'Shkruani email-in ose emrin e përdoruesit dhe fjalëkalimin.';
+    } else {
+        try {
+            $statement = $pdo->prepare(
+                'SELECT id_perdorues, username, email, password_hash, id_mjeku
+                 FROM perdorues WHERE username = :identity OR email = :identity LIMIT 1'
+            );
+            $statement->execute(['identity' => $identity]);
+            $user = $statement->fetch();
+
+            if ($user && password_verify($password, $user['password_hash'])) {
+                session_regenerate_id(true);
+                $_SESSION['auth_user'] = [
+                    'id' => (int) $user['id_perdorues'],
+                    'username' => $user['username'],
+                    'email' => $user['email'],
+                    'doctor_id' => $user['id_mjeku'] !== null ? (int) $user['id_mjeku'] : null,
+                ];
+                unset($_SESSION['csrf_token']);
+                $destination = $_SESSION['intended_url'] ?? '/index.php';
+                unset($_SESSION['intended_url']);
+                if (!is_string($destination) || $destination === '' || $destination[0] !== '/' || strpos($destination, '//') === 0 || strpos($destination, "\r") !== false || strpos($destination, "\n") !== false) {
+                    $destination = '/index.php';
+                }
+                redirect_to($destination);
+            }
+            $formError = 'Email-i/emri i përdoruesit ose fjalëkalimi nuk është i saktë.';
+        } catch (Throwable $exception) {
+            error_log('Kyçja dështoi gjatë kërkesës: ' . $exception->getMessage());
+            $formError = 'Nuk u krye kyçja. Kontrolloni lidhjen me databazën dhe provoni përsëri.';
+        }
+    }
+}
+?>
+<!doctype html>
+<html lang="sq">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f7f7">
+    <title>Kyçu | Menaxhimi i Klinikave</title>
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/style.css">
+</head>
+<body class="auth-page">
+    <main class="auth-layout">
+        <section class="auth-visual" aria-label="Menaxhimi i klinikës">
+            <a class="auth-brand" href="<?= h(APP_BASE_URL) ?>/login.php">
+                <span class="auth-brand-mark" aria-hidden="true">+</span>
+                <span><strong>Klinika</strong><small>Menaxhimi i vizitave</small></span>
+            </a>
+            <div class="auth-visual-copy">
+                <span class="auth-kicker"><span class="auth-kicker-dot"></span> KUJDES I ORGANIZUAR, ÇDO DITË</span>
+                <h1>Gjithçka për kujdesin ndaj pacientit, në një vend.</h1>
+                <p>Një pamje e qartë për ekipin, pacientët dhe oraret e klinikës suaj.</p>
+            </div>
+            <div class="auth-visual-footer"><span class="auth-shield" aria-hidden="true">✓</span> Qasje e mbrojtur për ekipin tuaj</div>
+            <div class="auth-orb auth-orb-one" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-two" aria-hidden="true"></div>
+        </section>
+
+        <section class="auth-panel">
+            <div class="auth-panel-inner">
+                <div class="auth-mobile-brand">
+                    <span class="auth-brand-mark" aria-hidden="true">+</span>
+                    <span><strong>Klinika</strong><small>Menaxhimi i vizitave</small></span>
+                </div>
+                <div class="auth-heading">
+                    <p class="eyebrow">MIRË SE U KTHYET</p>
+                    <h2>Kyçuni në llogarinë tuaj</h2>
+                    <p>Shkruani të dhënat tuaja për të vazhduar në panelin e klinikës.</p>
+                </div>
+
+                <?php if ($flash): ?>
+                    <div class="auth-notice auth-notice-success" role="status"><?= h($flash['message']) ?></div>
+                <?php endif; ?>
+                <?php if ($formError !== ''): ?>
+                    <div class="auth-notice auth-notice-error" role="alert"><?= h($formError) ?></div>
+                <?php endif; ?>
+
+                <?php if (!$pdo instanceof PDO): ?>
+                    <div class="auth-notice auth-notice-error" role="alert"><?= h($databaseError ?: 'Databaza nuk është e disponueshme.') ?></div>
+                    <p class="auth-help">Aktivizoni MySQL në XAMPP dhe kontrolloni konfigurimin te <code>config/database.php</code>.</p>
+                <?php elseif (!$authReady): ?>
+                    <div class="auth-notice auth-notice-error" role="alert">Tabela e llogarive nuk është krijuar ende.</div>
+                    <p class="auth-help">Në phpMyAdmin, hapni databazën <strong>klinika_db</strong> dhe ekzekutoni skedarin <code>database/migrations/002_create_perdorues.sql</code>.</p>
+                <?php elseif ($accountCount === 0): ?>
+                    <div class="auth-empty-state">
+                        <span class="auth-empty-icon" aria-hidden="true">✦</span>
+                        <h3>Krijoni llogarinë e parë</h3>
+                        <p>Konfigurimi fillestar bëhet një herë. Pas krijimit, kjo faqe do të shërbejë për kyçje.</p>
+                        <a class="button button-primary auth-submit" href="<?= h(APP_BASE_URL) ?>/setup.php">Nis konfigurimin <span aria-hidden="true">→</span></a>
+                    </div>
+                <?php else: ?>
+                    <form class="auth-form" action="<?= h(APP_BASE_URL) ?>/login.php" method="post">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                        <div class="auth-field">
+                            <label for="identity">Email ose emri i përdoruesit</label>
+                            <div class="auth-input-wrap">
+                                <span class="auth-input-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+                                </span>
+                                <input id="identity" name="identity" type="text" value="<?= h($identity) ?>" placeholder="p.sh. emri@klinika.al" autocomplete="username" maxlength="190" required autofocus>
+                            </div>
+                        </div>
+                        <div class="auth-field">
+                            <div class="auth-label-row"><label for="password">Fjalëkalimi</label></div>
+                            <div class="auth-input-wrap password-wrap">
+                                <span class="auth-input-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg>
+                                </span>
+                                <input id="password" name="password" type="password" placeholder="Shkruani fjalëkalimin" autocomplete="current-password" required>
+                                <button class="password-toggle" type="button" data-password-toggle="password" aria-label="Shfaq fjalëkalimin" aria-pressed="false">Shfaq</button>
+                            </div>
+                        </div>
+                        <button class="button button-primary auth-submit" type="submit">Kyçu në sistem <span aria-hidden="true">→</span></button>
+                        <p class="auth-security-note"><span aria-hidden="true">●</span> Lidhja juaj mbrohet me sesion të sigurt.</p>
+                    </form>
+                <?php endif; ?>
+
+                <footer class="auth-footer">© <?= date('Y') ?> Menaxhimi i Klinikave <span>·</span> Sistem demonstrues</footer>
+            </div>
+        </section>
+    </main>
+    <script src="<?= h(APP_BASE_URL) ?>/assets/js/script.js" defer></script>
+</body>
+</html>
