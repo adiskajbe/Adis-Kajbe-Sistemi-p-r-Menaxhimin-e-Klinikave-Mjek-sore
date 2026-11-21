@@ -5,23 +5,29 @@ $activePage = 'doctors';
 $doctors = [];
 $search = trim((string) ($_GET['kerko'] ?? ''));
 $flash = take_flash();
+$isDoctor = auth_user_has_role('mjek');
+$doctorId = (int) (current_auth_user()['doctor_id'] ?? 0);
 
 if ($pdo instanceof PDO) {
     try {
+        $where = [];
+        $params = [];
         if ($search !== '') {
-            $statement = $pdo->prepare(
-                'SELECT id_mjeku, emri, mbiemri, specializimi, telefoni, email FROM mjeku
-                 WHERE emri LIKE :name OR mbiemri LIKE :surname OR specializimi LIKE :specialty
-                 ORDER BY id_mjeku DESC'
-            );
             $pattern = '%' . $search . '%';
-            $statement->execute(['name' => $pattern, 'surname' => $pattern, 'specialty' => $pattern]);
-        } else {
-            $statement = $pdo->query(
-                'SELECT id_mjeku, emri, mbiemri, specializimi, telefoni, email FROM mjeku
-                 ORDER BY id_mjeku DESC'
-            );
+            $where[] = '(emri LIKE :name OR mbiemri LIKE :surname OR specializimi LIKE :specialty)';
+            $params['name'] = $pattern;
+            $params['surname'] = $pattern;
+            $params['specialty'] = $pattern;
         }
+        if ($isDoctor) {
+            $where[] = 'id_mjeku = :doctor_id';
+            $params['doctor_id'] = $doctorId;
+        }
+        $sql = 'SELECT id_mjeku, emri, mbiemri, specializimi, telefoni, email FROM mjeku';
+        if ($where) { $sql .= ' WHERE ' . implode(' AND ', $where); }
+        $sql .= ' ORDER BY id_mjeku DESC';
+        $statement = $pdo->prepare($sql);
+        $statement->execute($params);
         $doctors = $statement->fetchAll();
     } catch (Throwable $exception) {
         error_log('Lista e mjekëve nuk u lexua: ' . $exception->getMessage());
@@ -33,8 +39,8 @@ if ($pdo instanceof PDO) {
 include __DIR__ . '/../includes/header.php';
 ?>
 <section class="page-heading">
-    <div><p class="eyebrow">REGJISTRI</p><h1>Mjekët</h1><p>Regjistroni dhe mirëmbani të dhënat e mjekëve.</p></div>
-    <a class="button button-primary" href="<?= h(APP_BASE_URL) ?>/mjeket/shto.php"><span aria-hidden="true">+</span> Regjistro mjek</a>
+    <div><p class="eyebrow">REGJISTRI</p><h1><?= $isDoctor ? 'Profili im' : 'Mjekët' ?></h1><p><?= $isDoctor ? 'Të dhënat e profilit tuaj të mjekut.' : 'Shikoni të dhënat e mjekëve.' ?></p></div>
+    <?php if (auth_user_has_role('admin')): ?><a class="button button-primary" href="<?= h(APP_BASE_URL) ?>/mjeket/shto.php"><span aria-hidden="true">+</span> Regjistro mjek</a><?php endif; ?>
 </section>
 <?php if ($flash): ?><div class="notice <?= $flash['type'] === 'success' ? 'notice-success' : 'notice-warning' ?>" role="status"><?= h($flash['message']) ?></div><?php endif; ?>
 <?php if (!$pdo instanceof PDO): ?>
@@ -55,11 +61,11 @@ include __DIR__ . '/../includes/header.php';
                 <td><strong><?= h($doctor['emri'] . ' ' . $doctor['mbiemri']) ?></strong><small class="muted">ID <?= h($doctor['id_mjeku']) ?></small></td>
                 <td><?= h($doctor['specializimi']) ?></td><td><?= h($doctor['telefoni']) ?></td><td><?= h($doctor['email'] ?: '—') ?></td>
                 <td class="actions-cell">
-                    <a class="text-link" href="<?= h(APP_BASE_URL) ?>/mjeket/ndrysho.php?id=<?= h($doctor['id_mjeku']) ?>">Ndrysho</a>
+                    <?php if (auth_user_has_role('admin')): ?><a class="text-link" href="<?= h(APP_BASE_URL) ?>/mjeket/ndrysho.php?id=<?= h($doctor['id_mjeku']) ?>">Ndrysho</a>
                     <form class="inline-form" action="<?= h(APP_BASE_URL) ?>/mjeket/fshi.php" method="post" data-confirm="A dëshironi ta fshini këtë mjek?">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= h($doctor['id_mjeku']) ?>">
                         <button class="link-button danger-link" type="submit">Fshi</button>
-                    </form>
+                    </form><?php else: ?>Vetëm lexim<?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; else: ?><tr><td class="empty-state" colspan="5"><?= $search !== '' ? 'Nuk u gjet mjek me këtë kërkim.' : 'Lista është bosh. Regjistroni mjekun e parë.' ?></td></tr><?php endif; ?>

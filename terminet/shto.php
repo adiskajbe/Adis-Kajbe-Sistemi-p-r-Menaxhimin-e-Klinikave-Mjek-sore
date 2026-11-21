@@ -10,11 +10,24 @@ $errors = [];
 $patients = [];
 $doctors = [];
 $showForm = true;
-$values = ['id_pacienti' => 0, 'id_mjeku' => 0, 'data_ora' => '', 'statusi' => 'planifikuar', 'shenime' => ''];
+$authUser = current_auth_user();
+$isPatient = auth_user_has_role('pacient');
+$patientId = (int) ($authUser['patient_id'] ?? 0);
+$values = ['id_pacienti' => $isPatient ? $patientId : 0, 'id_mjeku' => 0, 'data_ora' => '', 'statusi' => 'planifikuar', 'shenime' => ''];
+if ($isPatient) {
+    $heading = 'Rezervo termin';
+    $submitLabel = 'Rezervo termin';
+}
 
 if ($pdo instanceof PDO) {
     try {
-        $patients = $pdo->query('SELECT id_pacienti, emri, mbiemri FROM pacienti ORDER BY emri, mbiemri')->fetchAll();
+        if ($isPatient && $patientId > 0) {
+            $patientQuery = $pdo->prepare('SELECT id_pacienti, emri, mbiemri FROM pacienti WHERE id_pacienti = :patient_id');
+            $patientQuery->execute(['patient_id' => $patientId]);
+            $patients = $patientQuery->fetchAll();
+        } elseif (!$isPatient) {
+            $patients = $pdo->query('SELECT id_pacienti, emri, mbiemri FROM pacienti ORDER BY emri, mbiemri')->fetchAll();
+        }
         $doctors = $pdo->query('SELECT id_mjeku, emri, mbiemri, specializimi FROM mjeku ORDER BY emri, mbiemri')->fetchAll();
     } catch (Throwable $exception) {
         error_log('Leximi i zgjedhjeve për termin dështoi: ' . $exception->getMessage());
@@ -27,7 +40,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!valid_csrf_token($_POST['csrf_token'] ?? null)) {
         $errors[] = 'Forma ka skaduar. Rifreskojeni faqen dhe provoni përsëri.';
     }
-    [$values, $fieldErrors] = valid_appointment_fields($_POST);
+    $appointmentInput = $_POST;
+    if ($isPatient) {
+        $appointmentInput['id_pacienti'] = $patientId;
+        $appointmentInput['statusi'] = 'planifikuar';
+        $appointmentInput['shenime'] = '';
+        if ($patientId < 1) {
+            $errors[] = 'Llogaria juaj nuk është lidhur me një profil pacienti. Kontaktoni administratorin.';
+        }
+    }
+    [$values, $fieldErrors] = valid_appointment_fields($appointmentInput);
+    if (auth_user_has_role('recepsionist') || $isPatient) {
+        $values['shenime'] = '';
+    }
     $errors = array_merge($errors, $fieldErrors);
     if (!$pdo instanceof PDO) {
         $errors[] = 'Databaza nuk është e disponueshme.';
@@ -57,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'status' => $values['statusi'],
                 'notes' => $values['shenime'] !== '' ? $values['shenime'] : null,
             ]);
-            set_flash('success', 'Termini u regjistrua me sukses.');
+            set_flash('success', $isPatient ? 'Termini u rezervua me sukses.' : 'Termini u regjistrua me sukses.');
             redirect_to('/terminet/lista.php');
         } catch (Throwable $exception) {
             error_log('Regjistrimi i terminit dështoi: ' . $exception->getMessage());

@@ -22,10 +22,6 @@ function take_flash(): ?array
     if (!isset($_SESSION['flash_message'])) {
         return null;
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     $flash = $_SESSION['flash_message'];
     unset($_SESSION['flash_message']);
     return $flash;
@@ -36,10 +32,6 @@ function csrf_token(): string
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return $_SESSION['csrf_token'];
 }
 
@@ -48,6 +40,174 @@ function valid_csrf_token($submittedToken): bool
     return is_string($submittedToken)
         && isset($_SESSION['csrf_token'])
         && hash_equals($_SESSION['csrf_token'], $submittedToken);
+}
+
+function current_auth_user(): ?array
+{
+    return isset($_SESSION['auth_user']) && is_array($_SESSION['auth_user'])
+        ? $_SESSION['auth_user']
+        : null;
+}
+
+function auth_user_has_role(string ...$roles): bool
+{
+    $user = current_auth_user();
+    return $user !== null && in_array((string) ($user['role'] ?? ''), $roles, true);
+}
+
+function require_roles(string ...$roles): void
+{
+    if (auth_user_has_role(...$roles)) {
+        return;
+    }
+    http_response_code(403);
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!doctype html><html lang="sq"><meta charset="utf-8"><title>Qasje e ndaluar</title>'
+        . '<body><main><h1>Qasje e ndaluar</h1><p>Nuk keni leje për këtë modul.</p>'
+        . '<a href="' . h(APP_BASE_URL) . '/index.php">Kthehu te paneli</a></main></body></html>';
+    exit;
+}
+
+function password_policy_error(string $password): ?string
+{
+    if (mb_strlen($password, 'UTF-8') < 12 || strlen($password) > 72) {
+        return 'Fjalëkalimi duhet të ketë të paktën 12 karaktere dhe jo më shumë se 72 bajte.';
+    }
+    $classes = 0;
+    $classes += preg_match('/[a-z]/', $password) === 1 ? 1 : 0;
+    $classes += preg_match('/[A-Z]/', $password) === 1 ? 1 : 0;
+    $classes += preg_match('/[0-9]/', $password) === 1 ? 1 : 0;
+    $classes += preg_match('/[^a-zA-Z0-9]/', $password) === 1 ? 1 : 0;
+    if ($classes < 3) {
+        return 'Përdorni të paktën 3 lloje karakteresh: shkronja të vogla/të mëdha, numra ose simbole.';
+    }
+    return null;
+}
+
+function auth_client_ip(): string
+{
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : 'unknown';
+}
+
+function login_rate_limit_buckets(string $identity, string $ip): array
+{
+    $buckets = [];
+    $normalizedIdentity = strtolower(trim($identity));
+    if ($normalizedIdentity !== '') {
+        $buckets[] = ['type' => 'identity', 'hash' => hash('sha256', $normalizedIdentity)];
+    }
+    if ($ip !== '') {
+        $buckets[] = ['type' => 'ip', 'hash' => hash('sha256', $ip)];
+    }
+    return $buckets;
+}
+
+function login_is_rate_limited(PDO $pdo, string $identity, string $ip): bool
+{
+    $statement = $pdo->prepare(
+        'SELECT 1 FROM login_rate_limits
+         WHERE bucket_type = :bucket_type AND bucket_hash = :bucket_hash
+           AND locked_until > CURRENT_TIMESTAMP LIMIT 1'
+    );
+    foreach (login_rate_limit_buckets($identity, $ip) as $bucket) {
+        $statement->execute(['bucket_type' => $bucket['type'], 'bucket_hash' => $bucket['hash']]);
+        if ($statement->fetchColumn()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function record_failed_login(PDO $pdo, string $identity, string $ip): void
+{
+    $buckets = login_rate_limit_buckets($identity, $ip);
+    if (!$buckets) {
+        return;
+    }
+    $startedTransaction = !$pdo->inTransaction();
+    if ($startedTransaction) {
+        $pdo->beginTransaction();
+    }
+    try {
+        $insert = $pdo->prepare(
+            'INSERT IGNORE INTO login_rate_limits (bucket_type, bucket_hash, failed_attempts, locked_until)
+             VALUES (:bucket_type, :bucket_hash, 0, NULL)'
+        );
+        $select = $pdo->prepare(
+            'SELECT failed_attempts, locked_until, (locked_until > CURRENT_TIMESTAMP) AS is_locked
+             FROM login_rate_limits
+             WHERE bucket_type = :bucket_type AND bucket_hash = :bucket_hash FOR UPDATE'
+        );
+        $update = $pdo->prepare(
+            'UPDATE login_rate_limits SET failed_attempts = :failed_attempts,
+             locked_until = IF(:is_locked = 1, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE), NULL),
+             updated_at = CURRENT_TIMESTAMP
+             WHERE bucket_type = :bucket_type AND bucket_hash = :bucket_hash'
+        );
+        foreach ($buckets as $bucket) {
+            $params = ['bucket_type' => $bucket['type'], 'bucket_hash' => $bucket['hash']];
+            $insert->execute($params);
+            $select->execute($params);
+            $current = $select->fetch();
+            if (!$current) {
+                continue;
+            }
+            if ((int) $current['is_locked'] === 1) {
+                continue;
+            }
+            $attempts = $current['locked_until'] !== null ? 1 : ((int) $current['failed_attempts'] + 1);
+            $attemptLimit = $bucket['type'] === 'ip' ? 20 : 5;
+            $update->execute($params + ['failed_attempts' => $attempts, 'is_locked' => $attempts >= $attemptLimit ? 1 : 0]);
+        }
+        if ($startedTransaction) {
+            $pdo->commit();
+        }
+    } catch (Throwable $exception) {
+        if ($startedTransaction && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
+    }
+}
+
+function clear_login_rate_limits(PDO $pdo, string $identity, string $ip): void
+{
+    $statement = $pdo->prepare(
+        'DELETE FROM login_rate_limits WHERE bucket_type = :bucket_type AND bucket_hash = :bucket_hash'
+    );
+    foreach (login_rate_limit_buckets($identity, $ip) as $bucket) {
+        $statement->execute(['bucket_type' => $bucket['type'], 'bucket_hash' => $bucket['hash']]);
+    }
+}
+
+function log_login_attempt(PDO $pdo, ?int $userId, string $identity, string $ip, string $status): void
+{
+    $identifier = mb_substr(trim($identity), 0, 190, 'UTF-8');
+    $statement = $pdo->prepare(
+        'INSERT INTO login_logs (id_perdorues, email_or_username, ip_address, status)
+         VALUES (:user_id, :identifier, :ip_address, :status)'
+    );
+    $statement->execute([
+        'user_id' => $userId,
+        'identifier' => $identifier,
+        'ip_address' => $ip,
+        'status' => $status,
+    ]);
+}
+
+function absolute_app_url(string $path): string
+{
+    $configuredUrl = trim((string) (getenv('APP_URL') ?: ''));
+    if ($configuredUrl !== '') {
+        $parts = parse_url($configuredUrl);
+        if (is_array($parts) && in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
+            && !empty($parts['host']) && empty($parts['user']) && empty($parts['pass'])
+            && empty($parts['query']) && empty($parts['fragment'])) {
+            return rtrim($configuredUrl, '/') . '/' . ltrim($path, '/');
+        }
+    }
+    return 'http://localhost' . APP_BASE_URL . '/' . ltrim($path, '/');
 }
 
 function valid_patient_fields(array $input): array
@@ -72,10 +232,6 @@ function valid_patient_fields(array $input): array
     if ($values['email'] !== '' && (!filter_var($values['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($values['email']) > 190)) {
         $errors[] = 'Shkruani një adresë email të vlefshme, deri në 190 karaktere.';
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return [$values, $errors];
 }
 
@@ -105,10 +261,6 @@ function valid_doctor_fields(array $input): array
     if ($values['email'] !== '' && (!filter_var($values['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($values['email']) > 190)) {
         $errors[] = 'Shkruani një adresë email të vlefshme, deri në 190 karaktere.';
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return [$values, $errors];
 }
 
@@ -150,10 +302,6 @@ function valid_appointment_fields(array $input): array
     if (mb_strlen($values['shenime']) > 2000) {
         $errors[] = 'Shënimet duhet të kenë deri në 2000 karaktere.';
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
     return [$values, $errors];
 }
 

@@ -13,16 +13,10 @@ if (!$id || $id < 1 || !valid_csrf_token($_POST['csrf_token'] ?? null)) {
     redirect_to('/pacientet/lista.php');
 }
 
-<<<<<<< HEAD
 if (!($pdo instanceof PDO)) {
     set_flash('error', 'Databaza nuk është e disponueshme.');
     redirect_to('/pacientet/lista.php');
     exit;
-=======
-if (!$pdo instanceof PDO) {
-    set_flash('error', 'Databaza nuk është e disponueshme.');
-    redirect_to('/pacientet/lista.php');
->>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
 }
 
 try {
