@@ -5,23 +5,30 @@ $activePage = 'patients';
 $patients = [];
 $search = trim((string) ($_GET['kerko'] ?? ''));
 $flash = take_flash();
+$isDoctor = auth_user_has_role('mjek');
+$doctorId = (int) (current_auth_user()['doctor_id'] ?? 0);
 
 if ($pdo instanceof PDO) {
     try {
+        $where = [];
+        $params = [];
         if ($search !== '') {
-            $statement = $pdo->prepare(
-                'SELECT id_pacienti, emri, mbiemri, telefoni, email FROM pacienti
-                 WHERE emri LIKE :name_search OR mbiemri LIKE :surname_search
-                 ORDER BY id_pacienti DESC'
-            );
             $pattern = '%' . $search . '%';
-            $statement->execute(['name_search' => $pattern, 'surname_search' => $pattern]);
-        } else {
-            $statement = $pdo->query(
-                'SELECT id_pacienti, emri, mbiemri, telefoni, email FROM pacienti
-                 ORDER BY id_pacienti DESC'
-            );
+            $where[] = '(p.emri LIKE :name_search OR p.mbiemri LIKE :surname_search)';
+            $params['name_search'] = $pattern;
+            $params['surname_search'] = $pattern;
         }
+        if ($isDoctor) {
+            $where[] = 'EXISTS (SELECT 1 FROM termini t WHERE t.id_pacienti = p.id_pacienti AND t.id_mjeku = :doctor_id)';
+            $params['doctor_id'] = $doctorId;
+        }
+        $sql = 'SELECT p.id_pacienti, p.emri, p.mbiemri, p.telefoni, p.email FROM pacienti p';
+        if ($where) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $sql .= ' ORDER BY p.id_pacienti DESC';
+        $statement = $pdo->prepare($sql);
+        $statement->execute($params);
         $patients = $statement->fetchAll();
     } catch (Throwable $exception) {
         error_log('Lista e pacientëve nuk u lexua: ' . $exception->getMessage());
@@ -33,8 +40,8 @@ if ($pdo instanceof PDO) {
 include __DIR__ . '/../includes/header.php';
 ?>
 <section class="page-heading">
-    <div><p class="eyebrow">REGJISTRI</p><h1>Pacientët</h1><p>Shikoni, kërkoni dhe përditësoni të dhënat bazë të pacientëve.</p></div>
-    <a class="button button-primary" href="<?= h(APP_BASE_URL) ?>/pacientet/shto.php"><span aria-hidden="true">+</span> Regjistro pacient</a>
+    <div><p class="eyebrow">REGJISTRI</p><h1><?= $isDoctor ? 'Pacientët e mi' : 'Pacientët' ?></h1><p><?= $isDoctor ? 'Shikoni pacientët që kanë termin me ju.' : 'Shikoni, kërkoni dhe përditësoni të dhënat bazë të pacientëve.' ?></p></div>
+    <?php if (!$isDoctor): ?><a class="button button-primary" href="<?= h(APP_BASE_URL) ?>/pacientet/shto.php"><span aria-hidden="true">+</span> Regjistro pacient</a><?php endif; ?>
 </section>
 
 <?php if ($flash): ?>
@@ -60,12 +67,14 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= h($patient['telefoni']) ?></td>
                         <td><?= h($patient['email'] ?: '—') ?></td>
                         <td class="actions-cell">
-                            <a class="text-link" href="<?= h(APP_BASE_URL) ?>/pacientet/ndrysho.php?id=<?= h($patient['id_pacienti']) ?>">Ndrysho</a>
-                            <form class="inline-form" action="<?= h(APP_BASE_URL) ?>/pacientet/fshi.php" method="post" data-confirm="A dëshironi ta fshini këtë pacient?">
-                                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-                                <input type="hidden" name="id" value="<?= h($patient['id_pacienti']) ?>">
-                                <button class="link-button danger-link" type="submit">Fshi</button>
-                            </form>
+                            <?php if (!$isDoctor): ?>
+                                <a class="text-link" href="<?= h(APP_BASE_URL) ?>/pacientet/ndrysho.php?id=<?= h($patient['id_pacienti']) ?>">Ndrysho</a>
+                                <form class="inline-form" action="<?= h(APP_BASE_URL) ?>/pacientet/fshi.php" method="post" data-confirm="A dëshironi ta fshini këtë pacient?">
+                                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                                    <input type="hidden" name="id" value="<?= h($patient['id_pacienti']) ?>">
+                                    <button class="link-button danger-link" type="submit">Fshi</button>
+                                </form>
+                            <?php else: ?>Vetëm lexim<?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; else: ?>

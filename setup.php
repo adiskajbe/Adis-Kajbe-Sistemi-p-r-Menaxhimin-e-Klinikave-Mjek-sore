@@ -6,6 +6,7 @@ if (!empty($_SESSION['auth_user']['id'])) {
 }
 
 $authReady = false;
+$authTableExists = false;
 $accountCount = 0;
 $formError = '';
 $username = '';
@@ -16,6 +17,11 @@ $doctors = [];
 if ($pdo instanceof PDO) {
     try {
         $accountCount = (int) $pdo->query('SELECT COUNT(*) FROM perdorues')->fetchColumn();
+        $authTableExists = true;
+        $pdo->query('SELECT role, is_active, must_change_password, id_mjeku, id_pacienti FROM perdorues LIMIT 0');
+        $pdo->query('SELECT bucket_type FROM login_rate_limits LIMIT 0');
+        $pdo->query('SELECT status FROM login_logs LIMIT 0');
+        $pdo->query('SELECT token_hash FROM password_reset_tokens LIMIT 0');
         $authReady = true;
         if ($accountCount > 0) {
             redirect_to('/login.php');
@@ -31,7 +37,7 @@ if ($pdo instanceof PDO) {
     }
 }
 
-if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = strtolower(trim((string) ($_POST['username'] ?? '')));
     $email = strtolower(trim((string) ($_POST['email'] ?? '')));
     $doctorId = trim((string) ($_POST['doctor_id'] ?? ''));
@@ -44,15 +50,12 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $formError = 'Emri i përdoruesit duhet të ketë 3–50 karaktere: shkronja, numra, pikë, vijë ose nënvizim.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190) {
         $formError = 'Shkruani një adresë email të vlefshme, deri në 190 karaktere.';
-    } elseif (mb_strlen($password, 'UTF-8') < 12 || strlen($password) > 72) {
-        $formError = 'Fjalëkalimi duhet të ketë të paktën 12 karaktere dhe jo më shumë se 72 bajte UTF-8.';
+    } elseif (password_policy_error($password) !== null) {
+        $formError = password_policy_error($password);
     } elseif (!hash_equals($password, $confirmation)) {
         $formError = 'Fjalëkalimet nuk përputhen.';
     } else {
         try {
-            if (!$pdo instanceof PDO) {
-                throw new RuntimeException('Databaza nuk është e disponueshme.');
-            }
             $collision = $pdo->prepare(
                 'SELECT COUNT(*) FROM perdorues
                  WHERE username IN (:username_a, :email_a) OR email IN (:username_b, :email_b)'
@@ -70,9 +73,6 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($validatedDoctorId === false || $validatedDoctorId < 1) {
                         $formError = 'Zgjidhni një mjek të vlefshëm ose lini fushën bosh.';
                     } else {
-                        if (!$pdo instanceof PDO) {
-                            throw new RuntimeException('Databaza nuk është e disponueshme.');
-                        }
                         $doctorCheck = $pdo->prepare(
                             'SELECT m.id_mjeku FROM mjeku m
                              LEFT JOIN perdorues u ON u.id_mjeku = m.id_mjeku
@@ -87,18 +87,17 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($formError === '') {
-                    if (!($pdo instanceof PDO)) {
-                        throw new RuntimeException('Databaza nuk është e disponueshme.');
-                    }
                     $passwordHash = password_hash($password, PASSWORD_DEFAULT);
                     $insert = $pdo->prepare(
-                        'INSERT INTO perdorues (username, email, password_hash, id_mjeku)
-                         VALUES (:username, :email, :password_hash, :doctor_id)'
+                        'INSERT INTO perdorues
+                            (username, email, password_hash, role, is_active, must_change_password, id_mjeku)
+                         VALUES (:username, :email, :password_hash, :role, 1, 0, :doctor_id)'
                     );
                     $insert->execute([
                         'username' => $username,
                         'email' => $email,
                         'password_hash' => $passwordHash,
+                        'role' => 'admin',
                         'doctor_id' => $linkedDoctorId === null ? null : (int) $linkedDoctorId,
                     ]);
                     set_flash('success', 'Llogaria u krijua. Tani mund të kyçeni me email-in ose emrin e përdoruesit.');
@@ -157,8 +156,8 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="auth-notice auth-notice-error" role="alert"><?= h($databaseError ?: 'Databaza nuk është e disponueshme.') ?></div>
                     <p class="auth-help">Aktivizoni MySQL në XAMPP dhe kontrolloni <code>config/database.php</code>.</p>
                 <?php elseif (!$authReady): ?>
-                    <div class="auth-notice auth-notice-error" role="alert">Tabela e llogarive nuk është krijuar ende.</div>
-                    <p class="auth-help">Në phpMyAdmin, zgjidhni <strong>klinika_db</strong> dhe ekzekutoni <code>database/migrations/002_create_perdorues.sql</code>.</p>
+                    <div class="auth-notice auth-notice-error" role="alert"><?= $authTableExists ? 'Struktura e llogarive ose lidhja me pacientët nuk është përditësuar.' : 'Tabela e llogarive nuk është krijuar ende.' ?></div>
+                    <p class="auth-help">Në phpMyAdmin, zgjidhni <strong>klinika_db</strong> dhe ekzekutoni migrimet <code>002_create_perdorues.sql</code>, <code>003_auth_security.sql</code> dhe <code>004_add_patient_accounts.sql</code> nga dosja <code>database/migrations</code>.</p>
                 <?php elseif ($accountCount > 0): ?>
                     <div class="auth-notice auth-notice-success" role="status">Llogaria e parë ekziston tashmë.</div>
                     <a class="button button-primary auth-submit" href="<?= h(APP_BASE_URL) ?>/login.php">Kthehu te kyçja</a>
@@ -195,7 +194,7 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             <small class="auth-field-hint">Mund ta lidhni llogarinë me një mjek ekzistues.</small>
                         </div>
                         <div class="auth-field">
-                            <label for="password">Fjalëkalimi <span class="auth-optional">(të paktën 12 karaktere)</span></label>
+                            <label for="password">Fjalëkalimi <span class="auth-optional">(12+ karaktere, të paktën 3 lloje karakteresh)</span></label>
                             <div class="auth-input-wrap password-wrap">
                                 <span class="auth-input-icon" aria-hidden="true">
                                     <svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg>

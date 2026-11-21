@@ -12,18 +12,15 @@ if ($appRoot !== false && $documentRoot !== false) {
 
     if (strpos($normalizedRoot, $normalizedDocumentRoot . '/') === 0) {
         $relativePath = substr($appRoot, strlen($documentRoot));
-        $baseUrl = '/' . trim(str_replace('\\', '/', $relativePath), '/');
+        $urlSegments = array_filter(explode('/', trim(str_replace('\\', '/', $relativePath), '/')), 'strlen');
+        $baseUrl = '/' . implode('/', array_map('rawurlencode', $urlSegments));
     } else {
-        $baseUrl = '/' . basename($appRoot);
+        $baseUrl = '/' . rawurlencode(basename($appRoot));
     }
 } else {
-    $baseUrl = '/' . basename(dirname(__DIR__));
+    $baseUrl = '/' . rawurlencode(basename(dirname(__DIR__)));
 }
 
 if (!defined('APP_BASE_URL')) {
     define('APP_BASE_URL', rtrim($baseUrl, '/'));
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8ea089d10acf3afd02a4571590b990271931a742
