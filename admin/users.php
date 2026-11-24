@@ -237,12 +237,14 @@ if ($pdo instanceof PDO) {
 }
 include __DIR__ . '/../includes/header.php';
 ?>
-<section class="page-heading"><div><p class="eyebrow">ADMINISTRIMI</p><h1>Llogaritë dhe rolet</h1><p>Krijoni përdorues, caktoni rolet dhe pezulloni qasjen pa fshirë llogaritë.</p></div></section>
+<section class="page-head">
+    <div><p class="eyebrow">ADMINISTRIMI</p><h1>Llogaritë dhe rolet</h1><p>Krijoni përdorues, caktoni rolet dhe menaxhoni qasjen në sistem.</p></div>
+</section>
 <?php if ($flash): ?><div class="notice notice-success" role="status"><?= h($flash['message']) ?></div><?php endif; ?>
 <?php if ($formError !== ''): ?><div class="notice notice-warning" role="alert"><?= h($formError) ?></div><?php endif; ?>
 <section class="content-card form-card">
-    <h2>Krijo llogari</h2>
-    <p class="muted">Jepni fjalëkalim fillestar përdoruesit përmes një kanali të sigurt; ai do të detyrohet ta ndryshojë në kyçjen e parë.</p>
+    <h2>Krijo llogari të re</h2>
+    <p class="muted">Përdoruesi i ri do të detyrohet ta ndryshojë fjalëkalimin fillestar në kyçjen e parë.</p>
     <form class="form-grid admin-role-form" action="<?= h(APP_BASE_URL) ?>/admin/users.php" method="post">
         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>"><input type="hidden" name="action" value="create">
         <div class="form-field"><label for="username">Emri i përdoruesit</label><input id="username" name="username" required minlength="3" maxlength="50" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,49}"></div>
@@ -256,7 +258,7 @@ include __DIR__ . '/../includes/header.php';
 </section>
 <section class="content-card admin-user-list">
     <h2>Llogaritë ekzistuese</h2>
-    <div class="table-wrap"><table><thead><tr><th>Përdoruesi</th><th>Roli / profili i lidhur</th><th>Statusi</th><th>Fjalëkalimi</th><th>Veprimet</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>Përdoruesi</th><th>Roli / Profili i lidhur</th><th>Statusi</th><th>Fjalëkalimi</th><th>Veprimet</th></tr></thead><tbody>
     <?php foreach ($accounts as $account): ?>
         <tr>
             <td><strong><?= h($account['username']) ?></strong><small class="muted"><?= h($account['email']) ?></small></td>
@@ -270,7 +272,7 @@ include __DIR__ . '/../includes/header.php';
                 </form>
                 <?php if ($account['doctor_name']): ?><small class="muted">Mjeku: <?= h($account['doctor_name'] . ' ' . $account['doctor_surname']) ?></small><?php elseif ($account['patient_name']): ?><small class="muted">Pacienti: <?= h($account['patient_name'] . ' ' . $account['patient_surname']) ?></small><?php endif; ?>
             </td>
-            <td><span class="status-pill <?= (int) $account['is_active'] === 1 ? 'status-planifikuar' : 'status-anuluar' ?>"><?= (int) $account['is_active'] === 1 ? 'Aktive' : 'Pezulluar' ?></span></td>
+            <td><span class="status-pill <?= (int) $account['is_active'] === 1 ? 'status-perfunduar' : 'status-anuluar' ?>"><?= (int) $account['is_active'] === 1 ? 'Aktive' : 'Pezulluar' ?></span></td>
             <td><?= (int) $account['must_change_password'] === 1 ? 'Ndryshim i detyrueshëm' : 'Në rregull' ?></td>
             <td><form action="<?= h(APP_BASE_URL) ?>/admin/users.php" method="post"><input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>"><input type="hidden" name="action" value="status"><input type="hidden" name="user_id" value="<?= h($account['id_perdorues']) ?>"><input type="hidden" name="is_active" value="<?= (int) $account['is_active'] === 1 ? '0' : '1' ?>"><button class="link-button <?= (int) $account['is_active'] === 1 ? 'danger-link' : '' ?>" type="submit"><?= (int) $account['is_active'] === 1 ? 'Pezullo' : 'Aktivizo' ?></button></form></td>
         </tr>
