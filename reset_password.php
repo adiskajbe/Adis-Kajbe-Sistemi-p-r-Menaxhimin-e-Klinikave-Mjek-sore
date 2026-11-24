@@ -83,15 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="sq">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vendos fjalëkalim të ri | Menaxhimi i Klinikave</title>
-    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/style.css">
+    <title>Vendos fjalëkalim të ri | Klinika</title>
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/tokens.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/layout.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/components.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/pages.css">
 </head>
 <body class="auth-page">
 <main class="auth-layout auth-layout-setup">
     <section class="auth-visual" aria-label="Siguria e llogarisë">
         <a class="auth-brand" href="<?= h(APP_BASE_URL) ?>/login.php"><span class="auth-brand-mark" aria-hidden="true">+</span><span><strong>Klinika</strong><small>Menaxhimi i vizitave</small></span></a>
-        <div class="auth-visual-copy"><span class="auth-kicker"><span class="auth-kicker-dot"></span> FJALËKALIM I RI</span><h1>Vendosni një fjalëkalim të fortë.</h1><p>Lidhja përdoret vetëm një herë dhe skadon pas 30 minutash.</p></div>
-        <div class="auth-visual-footer"><span class="auth-shield" aria-hidden="true">✓</span> Fjalëkalimet ruhen me hash</div>
+        <div class="auth-visual-copy"><span class="auth-kicker">FJALËKALIM I RI</span><h1>Vendosni një fjalëkalim të fortë.</h1><p>Lidhja përdoret vetëm një herë dhe skadon pas 30 minutash.</p></div>
+        <div class="auth-visual-footer"><span class="auth-shield" aria-hidden="true">✓</span> Fjalëkalimet ruhen me hash të sigurt</div>
     </section>
     <section class="auth-panel"><div class="auth-panel-inner">
         <div class="auth-mobile-brand"><span class="auth-brand-mark" aria-hidden="true">+</span><span><strong>Klinika</strong><small>Menaxhimi i vizitave</small></span></div>
@@ -106,13 +109,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
         <form class="auth-form" action="<?= h(APP_BASE_URL) ?>/reset_password.php" method="post">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>"><input type="hidden" name="token" value="<?= h($token) ?>">
-            <div class="auth-field"><label for="password">Fjalëkalimi i ri <small>(12+ karaktere, 3 lloje karakteresh)</small></label><div class="auth-input-wrap password-wrap"><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="72" required><button class="password-toggle" type="button" data-password-toggle="password" aria-label="Shfaq fjalëkalimin" aria-pressed="false">Shfaq</button></div></div>
-            <div class="auth-field"><label for="password_confirmation">Përsëritni fjalëkalimin</label><div class="auth-input-wrap password-wrap"><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="72" required><button class="password-toggle" type="button" data-password-toggle="password_confirmation" aria-label="Shfaq fjalëkalimin" aria-pressed="false">Shfaq</button></div></div>
+            <div class="auth-field"><label for="password">Fjalëkalimi i ri <small>(12+ karaktere, 3 lloje karakteresh)</small></label><div class="auth-input-wrap password-wrap"><span class="auth-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg></span><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="72" required><button class="password-toggle" type="button" data-password-toggle="password" aria-label="Shfaq fjalëkalimin" aria-pressed="false">Shfaq</button></div></div>
+            <div class="auth-field"><label for="password_confirmation">Përsëritni fjalëkalimin</label><div class="auth-input-wrap password-wrap"><span class="auth-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg></span><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="72" required><button class="password-toggle" type="button" data-password-toggle="password_confirmation" aria-label="Shfaq fjalëkalimin" aria-pressed="false">Shfaq</button></div></div>
             <button class="button button-primary auth-submit" type="submit">Ruaj fjalëkalimin <span aria-hidden="true">→</span></button>
         </form>
         <?php endif; ?>
         <footer class="auth-footer"><a href="<?= h(APP_BASE_URL) ?>/login.php">Kthehu te kyçja</a></footer>
     </div></section>
 </main>
-<script src="<?= h(APP_BASE_URL) ?>/assets/js/script.js" defer></script>
+<script src="<?= h(APP_BASE_URL) ?>/assets/js/app.js" defer></script>
 </body></html>

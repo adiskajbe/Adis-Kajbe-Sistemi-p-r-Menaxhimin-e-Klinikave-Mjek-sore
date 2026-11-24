@@ -23,8 +23,11 @@ try {
     $check = $pdo->prepare('SELECT COUNT(*) FROM termini WHERE id_pacienti = :id');
     $check->execute(['id' => $id]);
 
-    if ((int) $check->fetchColumn() > 0) {
-        set_flash('error', 'Pacienti nuk mund të fshihet, sepse ka termine të lidhura.');
+    $checkInv = $pdo->prepare('SELECT COUNT(*) FROM fatura WHERE id_pacienti = :id');
+    $checkInv->execute(['id' => $id]);
+
+    if ((int) $check->fetchColumn() > 0 || (int) $checkInv->fetchColumn() > 0) {
+        set_flash('error', 'Pacienti nuk mund të fshihet, sepse ka termine ose fatura të lidhura.');
     } else {
         $delete = $pdo->prepare('DELETE FROM pacienti WHERE id_pacienti = :id');
         $delete->execute(['id' => $id]);

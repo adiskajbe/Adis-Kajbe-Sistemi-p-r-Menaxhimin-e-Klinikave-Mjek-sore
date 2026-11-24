@@ -9,6 +9,7 @@ $action = APP_BASE_URL . '/terminet/ndrysho.php?id=' . (int) $id;
 $errors = [];
 $patients = [];
 $doctors = [];
+$services = [];
 $appointment = null;
 $showForm = true;
 
@@ -21,9 +22,10 @@ if ($pdo instanceof PDO) {
     try {
         $patients = $pdo->query('SELECT id_pacienti, emri, mbiemri FROM pacienti ORDER BY emri, mbiemri')->fetchAll();
         $doctors = $pdo->query('SELECT id_mjeku, emri, mbiemri, specializimi FROM mjeku ORDER BY emri, mbiemri')->fetchAll();
+        $services = $pdo->query('SELECT emri, kohezgjatja_min FROM sherbimet_klinike WHERE aktiv = 1 ORDER BY emri')->fetchAll();
         if ($id && $id > 0) {
             $statement = $pdo->prepare(
-                'SELECT id_termini, id_pacienti, id_mjeku, data_ora, statusi, shenime FROM termini WHERE id_termini = :id'
+                'SELECT id_termini, id_pacienti, id_mjeku, data_ora, kohezgjatja_min, lloji_vizites, arsyeja, statusi, shenime FROM termini WHERE id_termini = :id'
             );
             $statement->execute(['id' => $id]);
             $appointment = $statement->fetch();
@@ -34,6 +36,7 @@ if ($pdo instanceof PDO) {
             } else {
                 $appointment['id_pacienti'] = (int) $appointment['id_pacienti'];
                 $appointment['id_mjeku'] = (int) $appointment['id_mjeku'];
+                $appointment['kohezgjatja_min'] = (int) ($appointment['kohezgjatja_min'] ?? 30);
                 $appointment['data_ora'] = appointment_datetime_for_input($appointment['data_ora']);
             }
         }
@@ -44,7 +47,10 @@ if ($pdo instanceof PDO) {
         $showForm = false;
     }
 }
-$values = $appointment ?: ['id_pacienti' => 0, 'id_mjeku' => 0, 'data_ora' => '', 'statusi' => 'planifikuar', 'shenime' => ''];
+$values = $appointment ?: [
+    'id_pacienti' => 0, 'id_mjeku' => 0, 'data_ora' => '', 'kohezgjatja_min' => 30,
+    'lloji_vizites' => 'Kontrollë e përgjithshme', 'arsyeja' => '', 'statusi' => 'planifikuar', 'shenime' => '',
+];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $appointment) {
     $submittedId = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
@@ -64,20 +70,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $appointment) {
             $errors[] = 'Mjeku i zgjedhur nuk ekziston.';
         }
         $databaseDate = appointment_datetime_for_database($values['data_ora']);
-        if (!$errors && $values['statusi'] === 'planifikuar' && appointment_time_conflicts($pdo, $values['id_mjeku'], $databaseDate, (int) $id)) {
-            $errors[] = 'Mjeku ka një termin tjetër të planifikuar në këtë datë dhe orë.';
+        if (!$errors && in_array($values['statusi'], ['planifikuar', 'konfirmuar', 'ne_pritje'], true)
+            && appointment_time_conflicts($pdo, $values['id_mjeku'], $databaseDate, (int) $id)) {
+            $errors[] = 'Mjeku ka një termin tjetër aktiv në këtë datë dhe orë.';
         }
     }
     if ($pdo instanceof PDO && !$errors) {
         try {
             $statement = $pdo->prepare(
                 'UPDATE termini SET id_pacienti = :patient, id_mjeku = :doctor, data_ora = :date_time,
-                 statusi = :status, shenime = :notes WHERE id_termini = :id'
+                 kohezgjatja_min = :duration, lloji_vizites = :visit_type, arsyeja = :reason, statusi = :status, shenime = :notes WHERE id_termini = :id'
             );
             $statement->execute([
                 'patient' => $values['id_pacienti'],
                 'doctor' => $values['id_mjeku'],
                 'date_time' => appointment_datetime_for_database($values['data_ora']),
+                'duration' => $values['kohezgjatja_min'],
+                'visit_type' => $values['lloji_vizites'],
+                'reason' => $values['arsyeja'] !== '' ? $values['arsyeja'] : null,
                 'status' => $values['statusi'],
                 'notes' => $values['shenime'] !== '' ? $values['shenime'] : null,
                 'id' => $id,

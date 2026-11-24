@@ -32,14 +32,19 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $ipAddress = auth_client_ip();
 
     if (!valid_csrf_token($_POST['csrf_token'] ?? null)) {
-        try {
-            log_login_attempt($pdo, null, $identity, $ipAddress, 'failure');
-        } catch (Throwable $exception) {
-            error_log('Tentativa me token CSRF të pavlefshëm nuk u auditua: ' . $exception->getMessage());
+        if ($pdo instanceof PDO) {
+            try {
+                log_login_attempt($pdo, null, $identity, $ipAddress, 'failure');
+            } catch (Throwable $exception) {
+                error_log('Tentativa me token CSRF të pavlefshëm nuk u auditua: ' . $exception->getMessage());
+            }
         }
         $formError = 'Email-i ose fjalëkalimi është i pasaktë.';
     } else {
         try {
+            if (!$pdo instanceof PDO) {
+                throw new RuntimeException('Databaza nuk është e disponueshme.');
+            }
             $pdo->exec("DELETE FROM login_rate_limits WHERE updated_at < CURRENT_TIMESTAMP - INTERVAL 1 DAY AND (locked_until IS NULL OR locked_until < CURRENT_TIMESTAMP)");
             $isLimited = login_is_rate_limited($pdo, $identity, $ipAddress);
             $user = null;
@@ -79,7 +84,12 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!empty($user['must_change_password'])) {
                     redirect_to('/change_password.php');
                 }
-                $dashboards = ['admin' => '/index.php', 'mjek' => '/panels/doctor.php', 'recepsionist' => '/panels/receptionist.php', 'pacient' => '/panels/patient.php'];
+                $dashboards = [
+                    'admin' => '/index.php',
+                    'mjek' => '/panels/doctor.php',
+                    'recepsionist' => '/panels/receptionist.php',
+                    'pacient' => '/panels/patient.php',
+                ];
                 redirect_to($dashboards[$user['role']] ?? '/index.php');
             }
             log_login_attempt($pdo, $user ? (int) $user['id_perdorues'] : null, $user['email'] ?? $identity, $ipAddress, 'failure');
@@ -99,25 +109,26 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f3f7f7">
-    <title>Kyçu | Menaxhimi i Klinikave</title>
-    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/style.css">
+    <meta name="theme-color" content="#0f766e">
+    <title>Kyçu | Klinika · Menaxhimi i Klinikave</title>
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/tokens.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/layout.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/components.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/pages.css">
 </head>
 <body class="auth-page">
     <main class="auth-layout">
         <section class="auth-visual" aria-label="Menaxhimi i klinikës">
             <a class="auth-brand" href="<?= h(APP_BASE_URL) ?>/login.php">
                 <span class="auth-brand-mark" aria-hidden="true">+</span>
-                <span><strong>Klinika</strong><small>Menaxhimi i vizitave</small></span>
+                <span><strong>Klinika</strong><small>Menaxhimi i vizitave dhe kartelave</small></span>
             </a>
             <div class="auth-visual-copy">
-                <span class="auth-kicker"><span class="auth-kicker-dot"></span> KUJDES I ORGANIZUAR, ÇDO DITË</span>
+                <span class="auth-kicker">KLINIKË E DIGJITALIZUAR</span>
                 <h1>Gjithçka për kujdesin ndaj pacientit, në një vend.</h1>
-                <p>Një pamje e qartë për ekipin, pacientët dhe oraret e klinikës suaj.</p>
+                <p>Termine, kartela mjekësore EHR, faturime dhe portali i pacientëve të unifikuara në një hapësirë pune.</p>
             </div>
-            <div class="auth-visual-footer"><span class="auth-shield" aria-hidden="true">✓</span> Qasje e mbrojtur për ekipin tuaj</div>
-            <div class="auth-orb auth-orb-one" aria-hidden="true"></div>
-            <div class="auth-orb auth-orb-two" aria-hidden="true"></div>
+            <div class="auth-visual-footer"><span class="auth-shield" aria-hidden="true">✓</span> Qasje e mbrojtur me sesione dhe role të ndara</div>
         </section>
 
         <section class="auth-panel">
@@ -129,7 +140,7 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="auth-heading">
                     <p class="eyebrow">MIRË SE U KTHYET</p>
                     <h2>Kyçuni në llogarinë tuaj</h2>
-                    <p>Shkruani të dhënat tuaja për të vazhduar në panelin e klinikës.</p>
+                    <p>Shkruani email-in ose emrin e përdoruesit për të hyrë në panelin tuaj.</p>
                 </div>
 
                 <?php if ($flash): ?>
@@ -144,10 +155,10 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="auth-help">Aktivizoni MySQL në XAMPP dhe kontrolloni konfigurimin te <code>config/database.php</code>.</p>
                 <?php elseif (!$authReady): ?>
                     <div class="auth-notice auth-notice-error" role="alert"><?= $authTableExists ? 'Struktura e llogarive ose lidhja me pacientët nuk është përditësuar.' : 'Tabela e llogarive nuk është krijuar ende.' ?></div>
-                    <p class="auth-help">Në phpMyAdmin, hapni databazën <strong>klinika_db</strong> dhe ekzekutoni migrimet <code>002_create_perdorues.sql</code>, <code>003_auth_security.sql</code> dhe <code>004_add_patient_accounts.sql</code> nga dosja <code>database/migrations</code>.</p>
+                    <p class="auth-help">Në phpMyAdmin, hapni databazën <strong>klinika_db</strong> dhe ekzekutoni migrimet <code>002_create_perdorues.sql</code>, <code>003_auth_security.sql</code>, <code>004_add_patient_accounts.sql</code> dhe <code>005_klinika_im_modules.sql</code>.</p>
                 <?php elseif ($accountCount === 0): ?>
                     <div class="auth-empty-state">
-                        <span class="auth-empty-icon" aria-hidden="true">✦</span>
+                        <span class="auth-empty-icon" aria-hidden="true">+</span>
                         <h3>Krijoni llogarinë e parë</h3>
                         <p>Konfigurimi fillestar bëhet një herë. Pas krijimit, kjo faqe do të shërbejë për kyçje.</p>
                         <a class="button button-primary auth-submit" href="<?= h(APP_BASE_URL) ?>/setup.php">Nis konfigurimin <span aria-hidden="true">→</span></a>
@@ -175,14 +186,14 @@ if ($authReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
                         <button class="button button-primary auth-submit" type="submit">Kyçu në sistem <span aria-hidden="true">→</span></button>
-                        <p class="auth-security-note"><span aria-hidden="true">●</span> Lidhja juaj mbrohet me sesion të sigurt.</p>
+                        <p class="auth-security-note">Lidhja juaj mbrohet me sesion të sigurt dhe mbrojtje CSRF.</p>
                     </form>
                 <?php endif; ?>
 
-                <footer class="auth-footer">© <?= date('Y') ?> Menaxhimi i Klinikave <span>·</span> Sistem demonstrues</footer>
+                <footer class="auth-footer">© <?= date('Y') ?> Klinika · Menaxhimi i Klinikave Mjekësore</footer>
             </div>
         </section>
     </main>
-    <script src="<?= h(APP_BASE_URL) ?>/assets/js/script.js" defer></script>
+    <script src="<?= h(APP_BASE_URL) ?>/assets/js/app.js" defer></script>
 </body>
 </html>

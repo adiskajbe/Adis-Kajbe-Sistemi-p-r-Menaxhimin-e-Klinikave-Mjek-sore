@@ -116,9 +116,12 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f3f7f7">
-    <title>Konfigurimi fillestar | Menaxhimi i Klinikave</title>
-    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/style.css">
+    <meta name="theme-color" content="#0f766e">
+    <title>Konfigurimi fillestar | Klinika</title>
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/tokens.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/layout.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/components.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/pages.css">
 </head>
 <body class="auth-page">
     <main class="auth-layout auth-layout-setup">
@@ -128,13 +131,11 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
                 <span><strong>Klinika</strong><small>Menaxhimi i vizitave</small></span>
             </a>
             <div class="auth-visual-copy">
-                <span class="auth-kicker"><span class="auth-kicker-dot"></span> HAPI I PARË</span>
+                <span class="auth-kicker">HAPI I PARË</span>
                 <h1>Vendosni qasjen e sigurt të klinikës.</h1>
-                <p>Krijoni llogarinë fillestare për të hyrë te pacientët, mjekët dhe terminet.</p>
+                <p>Krijoni llogarinë e administratorit për të menaxhuar pacientët, mjekët, kartelat dhe financat.</p>
             </div>
             <div class="auth-visual-footer"><span class="auth-shield" aria-hidden="true">✓</span> Konfigurimi lejohet vetëm një herë</div>
-            <div class="auth-orb auth-orb-one" aria-hidden="true"></div>
-            <div class="auth-orb auth-orb-two" aria-hidden="true"></div>
         </section>
         <section class="auth-panel">
             <div class="auth-panel-inner auth-panel-inner-setup">
@@ -144,7 +145,7 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
                 </div>
                 <div class="auth-heading">
                     <p class="eyebrow">KONFIGURIMI I PARË</p>
-                    <h2>Krijoni llogarinë tuaj</h2>
+                    <h2>Krijoni llogarinë e administratorit</h2>
                     <p>Kjo faqe çaktivizohet automatikisht sapo të krijohet llogaria e parë.</p>
                 </div>
 
@@ -157,19 +158,14 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
                     <p class="auth-help">Aktivizoni MySQL në XAMPP dhe kontrolloni <code>config/database.php</code>.</p>
                 <?php elseif (!$authReady): ?>
                     <div class="auth-notice auth-notice-error" role="alert"><?= $authTableExists ? 'Struktura e llogarive ose lidhja me pacientët nuk është përditësuar.' : 'Tabela e llogarive nuk është krijuar ende.' ?></div>
-                    <p class="auth-help">Në phpMyAdmin, zgjidhni <strong>klinika_db</strong> dhe ekzekutoni migrimet <code>002_create_perdorues.sql</code>, <code>003_auth_security.sql</code> dhe <code>004_add_patient_accounts.sql</code> nga dosja <code>database/migrations</code>.</p>
-                <?php elseif ($accountCount > 0): ?>
-                    <div class="auth-notice auth-notice-success" role="status">Llogaria e parë ekziston tashmë.</div>
-                    <a class="button button-primary auth-submit" href="<?= h(APP_BASE_URL) ?>/login.php">Kthehu te kyçja</a>
+                    <p class="auth-help">Në phpMyAdmin, zgjidhni <strong>klinika_db</strong> dhe ekzekutoni skriptet në <code>database/</code>.</p>
                 <?php else: ?>
                     <form class="auth-form setup-form" action="<?= h(APP_BASE_URL) ?>/setup.php" method="post">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <div class="auth-field">
                             <label for="username">Emri i përdoruesit</label>
                             <div class="auth-input-wrap">
-                                <span class="auth-input-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
-                                </span>
+                                <span class="auth-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></span>
                                 <input id="username" name="username" type="text" value="<?= h($username) ?>" placeholder="p.sh. administratori" autocomplete="username" minlength="3" maxlength="50" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,49}" required autofocus>
                             </div>
                             <small class="auth-field-hint">3–50 karaktere; shkronja, numra, pikë, vijë ose nënvizim.</small>
@@ -177,9 +173,7 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
                         <div class="auth-field">
                             <label for="email">Email-i i llogarisë</label>
                             <div class="auth-input-wrap">
-                                <span class="auth-input-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
-                                </span>
+                                <span class="auth-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span>
                                 <input id="email" name="email" type="email" value="<?= h($email) ?>" placeholder="emri@klinika.al" autocomplete="email" maxlength="190" required>
                             </div>
                         </div>
@@ -191,14 +185,11 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
                                     <option value="<?= h($doctor['id_mjeku']) ?>" <?= $doctorId === (string) $doctor['id_mjeku'] ? 'selected' : '' ?>><?= h($doctor['emri'] . ' ' . $doctor['mbiemri'] . ' · ' . $doctor['specializimi']) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <small class="auth-field-hint">Mund ta lidhni llogarinë me një mjek ekzistues.</small>
                         </div>
                         <div class="auth-field">
-                            <label for="password">Fjalëkalimi <span class="auth-optional">(12+ karaktere, të paktën 3 lloje karakteresh)</span></label>
+                            <label for="password">Fjalëkalimi <span class="auth-optional">(12+ karaktere, 3 lloje)</span></label>
                             <div class="auth-input-wrap password-wrap">
-                                <span class="auth-input-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg>
-                                </span>
+                                <span class="auth-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg></span>
                                 <input id="password" name="password" type="password" placeholder="Krijoni fjalëkalimin" autocomplete="new-password" minlength="12" maxlength="72" required>
                                 <button class="password-toggle" type="button" data-password-toggle="password" aria-label="Shfaq fjalëkalimin" aria-pressed="false">Shfaq</button>
                             </div>
@@ -206,9 +197,7 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
                         <div class="auth-field">
                             <label for="password_confirmation">Përsëritni fjalëkalimin</label>
                             <div class="auth-input-wrap password-wrap">
-                                <span class="auth-input-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg>
-                                </span>
+                                <span class="auth-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3M12 14v3"/></svg></span>
                                 <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Shkruajeni sërish fjalëkalimin" autocomplete="new-password" minlength="12" maxlength="72" required>
                                 <button class="password-toggle" type="button" data-password-toggle="password_confirmation" aria-label="Shfaq fjalëkalimin" aria-pressed="false">Shfaq</button>
                             </div>
@@ -220,6 +209,6 @@ if ($authReady && $pdo instanceof PDO && $_SERVER['REQUEST_METHOD'] === 'POST') 
             </div>
         </section>
     </main>
-    <script src="<?= h(APP_BASE_URL) ?>/assets/js/script.js" defer></script>
+    <script src="<?= h(APP_BASE_URL) ?>/assets/js/app.js" defer></script>
 </body>
 </html>

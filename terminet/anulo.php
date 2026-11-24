@@ -15,10 +15,16 @@ if (!$pdo instanceof PDO) {
     redirect_to('/terminet/lista.php');
 }
 try {
-    $statement = $pdo->prepare("UPDATE termini SET statusi = 'anuluar' WHERE id_termini = :id AND statusi = 'planifikuar'");
-    $statement->execute(['id' => $id]);
+    if (auth_user_has_role('pacient')) {
+        $patientId = (int) (current_auth_user()['patient_id'] ?? 0);
+        $statement = $pdo->prepare("UPDATE termini SET statusi = 'anuluar' WHERE id_termini = :id AND id_pacienti = :patient_id AND statusi = 'planifikuar'");
+        $statement->execute(['id' => $id, 'patient_id' => $patientId]);
+    } else {
+        $statement = $pdo->prepare("UPDATE termini SET statusi = 'anuluar' WHERE id_termini = :id AND statusi IN ('planifikuar', 'konfirmuar', 'ne_pritje')");
+        $statement->execute(['id' => $id]);
+    }
     $cancelled = $statement->rowCount() > 0;
-    set_flash($cancelled ? 'success' : 'error', $cancelled ? 'Termini u anulua.' : 'Termini nuk u gjet ose nuk është më i planifikuar.');
+    set_flash($cancelled ? 'success' : 'error', $cancelled ? 'Termini u anulua.' : 'Termini nuk u gjet ose nuk mund të anulohet.');
 } catch (Throwable $exception) {
     error_log('Anulimi i terminit dështoi: ' . $exception->getMessage());
     set_flash('error', 'Termini nuk mund të anulohej. Provoni përsëri.');
