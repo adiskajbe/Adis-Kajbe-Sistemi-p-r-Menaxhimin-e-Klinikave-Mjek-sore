@@ -1,105 +1,32 @@
-# Sistemi për Menaxhimin e Klinikave Mjekësore
+# Klinika — Sistem i Menaxhimit të Klinikave Mjekësore
 
-Ky është një aplikacion demonstrues PHP/MySQL për menaxhimin e pacientëve, mjekëve dhe termineve. Ai përfshin CRUD-in për pacientë e mjekë dhe regjistrimin, listimin, ndryshimin, anulimin dhe fshirjen e termineve.
+Aplikacion ueb i ndërtuar tërësisht me **PHP, MySQL, HTML, CSS dhe JavaScript** (pa framework-e të jashtme), i zgjeruar me module të plota klinike dhe administrative:
 
-Aplikacioni është për mësim dhe demonstrim. Mos ruani të dhëna reale mjekësore.
+## Modulet kryesore
+1. **Paneli i Analitikave (`index.php`)**: Treguesit KPI në kohë reale, ngarkesa ditore për 7 ditët e ardhshme, shpërndarja e statuseve të termineve, agjenda e ditës dhe faturat në pritje.
+2. **Kartela Mjekësore EHR (`kartela/`)**: Regjistrimi i diagnozave (me kod ICD-10), shenjave vitale (presioni i gjakut, pulsi, temperatura, pesha), anamnezës, recetave dhe printimi i raportit klinik.
+3. **Terminet & Kalendari Javor (`terminet/`)**: Pamje tabelare dhe kalendar 7-ditor, kontroll konflikti të orarit, check-in nga recepsioni (`Planifikuar` → `Konfirmuar` → `Në pritje` → `Përfunduar`).
+4. **Faturimi & Financat (`faturimi/`)**: Katalogu i shërbimeve (`sherbimet_klinike`), krijimi i faturave me zëra dinamikë, pagesa të plota ose të pjesshme (`cash`, `kartë`, `transfertë`, `sigurim`) dhe faturë e printueshme.
+5. **Dosja e Pacientit & Ekipi Mjekësor (`pacientet/`, `mjeket/`)**: Të dhëna demografike, grupi i gjakut, alergjitë, kontakti emergjent, orari i mjekut dhe tarifa bazike.
+6. **Rolet dhe Siguria (`includes/bootstrap.php`, `admin/`)**:
+   - `admin`: qasje e plotë në të gjitha modulet, analitika, përdoruesit dhe regjistrin e kyçjeve.
+   - `mjek`: orari personal, kartelat EHR dhe dosjet klinike të pacientëve të vet (pa qasje në fatura/admin).
+   - `recepsionist`: pacientët, terminet, check-in dhe faturimi (pa qasje në shënimet konfidenciale EHR).
+   - `pacient`: portali personal i pacientit (rezervim/anulim terminesh, histori EHR vetëm-lexim, fatura vetëm-lexim).
 
-## Kërkesat
+## Struktura e dosjeve
+- `config/` — Konfigurimi i aplikacionit dhe lidhja PDO me MySQL
+- `includes/` — Sesionet, siguria CSRF, kontrolli RBAC, ndihmësit dhe paraqitja
+- `database/` — Skema e plotë (`klinika_db.sql`), të dhënat demo (`seed_demo.sql`) dhe migrimet `001`–`005`
+- `admin/` — Menaxhimi i llogarive, roleve dhe regjistrit të hyrjeve
+- `panels/` — Panelet e dedikuara për Mjekun, Recepsionistin dhe Pacientin
+- `pacientet/`, `mjeket/`, `terminet/`, `kartela/`, `faturimi/`, `api/` — Modulet funksionale
+- `assets/css/`, `assets/js/`, `assets/img/` — Stilet, skriptet dhe imazhet të ndara rreptësisht (zero CSS/JS inline)
 
-- XAMPP me Apache, PHP dhe MySQL/MariaDB
-- PHP 7.4 ose më i ri me PDO MySQL
-- Shfletues modern
-
-## Nisja me XAMPP
-
-1. Vendoseni dosjen e projektit (atë që përmban `index.php`, `config/` dhe `database/`) te `C:\xampp\htdocs\menaxhimi-klinikave`.
-2. Hapni XAMPP Control Panel dhe nisni Apache dhe MySQL.
-3. Hapni phpMyAdmin në `http://localhost/phpmyadmin`.
-4. Importoni skedarin `database/klinika_db.sql`.
-5. Nëse po përdorni databazën e vjetër, zgjidhni `klinika_db` në phpMyAdmin dhe ekzekutoni një herë `database/migrations/001_add_mjeku_email.sql`.
-6. Hapni `config/database.php`. Vlerat fillestare përputhen me konfigurimin lokal të zakonshëm të XAMPP (`root`, pa fjalëkalim). Përdorni variablat `DB_HOST`, `DB_NAME`, `DB_USER` dhe `DB_PASS` nëse konfigurimi juaj ndryshon.
-7. Hapni `http://localhost/menaxhimi-klinikave/` (përdorni emrin e dosjes që keni vendosur).
-
-Për demonstrim mund të importoni edhe `database/seed_demo.sql`; ai përdor vetëm të dhëna sintetike dhe mund të ekzekutohet përsëri pa dublikuar mostrën.
-
-## Funksionalitetet
-
-- Pacientët: regjistrim, listim, kërkim, ndryshim dhe fshirje. Fshirja bllokohet kur pacienti ka termine.
-- Mjekët: regjistrim, listim, kërkim, ndryshim dhe fshirje. Fshirja bllokohet kur mjeku ka termine.
-- Terminet: regjistrim, listim me pacientin dhe mjekun, ndryshim, anulim përmes statusit dhe fshirje e përhershme.
-- Termini i planifikuar nuk mund të caktohet në të kaluarën dhe mjeku nuk mund të ketë dy termine të planifikuara në të njëjtën orë.
-- Aplikacioni renderon HTML nga PHP dhe nuk ekspozon REST/JSON API.
-
-## Skenarët e testimit manual
-
-| ID | Skenari | Rezultati i pritur |
-|---|---|---|
-| P01 | Regjistro pacient të vlefshëm | Ruhet dhe shfaqet në listë |
-| P02 | Lër bosh emrin ose telefonin | Validimi refuzon ruajtjen |
-| P03 | Jep email të pavlefshëm | Forma refuzohet |
-| P04 | Kërko dhe ndrysho pacientin | Gjendet; ndryshimi ruhet pas rifreskimit |
-| P05 | Fshi pacient pa termin | Fshirja kryhet |
-| P06 | Fshi pacient me termin të lidhur | Fshirja bllokohet |
-| M01 | Krijo, kërko dhe ndrysho mjek | Të dhënat ruhen e shfaqen |
-| M02 | Fshi mjek pa termin / me termin | Fshihet pa lidhje; bllokohet me lidhje |
-| T01 | Cakto termin me pacient dhe mjek ekzistues | Termini ruhet dhe shfaqet |
-| T02 | Provo datë të kaluar | Validimi refuzon termin e planifikuar |
-| T03 | Cakto dy termine për të njëjtin mjek në të njëjtën orë | Termini i dytë refuzohet |
-| T04 | Ndrysho, anulo dhe fshi termin | Përditësimi, anulimi dhe fshirja funksionojnë |
-
-## Rezultatet reale të testimit
-
-Testimi u krye më 28.10.2026 kundrejt kopjes origjinale të projektit, me PHP 8.2.12, MariaDB 10.4.32 dhe databazë të veçantë testimi me të dhëna sintetike.
-
-| Fusha | Rezultati | Verifikimi |
-|---|---|---|
-| Pacientët (P01–P06) | PASS | Regjistrimi, validimi i fushave dhe email-it, kërkimi sipas emrit/mbiemrit, ruajtja e ndryshimeve pas rifreskimit, fshirja pa termin dhe bllokimi i fshirjes me termin |
-| Mjekët (M01–M02) | PASS | CRUD-i, kërkimi dhe bllokimi i fshirjes kur ka termine të lidhura |
-| Terminet (T01–T04) | PASS | Krijimi me pacient/mjek ekzistues, refuzimi i datës së kaluar, parandalimi i konfliktit të orarit, ndryshimi, anulimi dhe fshirja |
-| Kërkesat PHP | PASS | `php -l` nuk raportoi gabime sintaksore në asnjë skedar PHP të projektit |
-| Testet funksionale HTTP/DB | PASS | 32 nga 32 kontrolle të automatizuara kaluan kundrejt kopjes origjinale |
-| Migrimi i email-it të mjekut | PASS | U provua dy herë në skemë të vjetër; kolona ekziston dhe migrimi mund të përsëritet pa gabim |
-| Skema dhe të dhënat demo | PASS | Importi i skemës u verifikua; seed-i u ekzekutua dy herë pa krijuar dublikatë |
-
-Të gjitha kontrollet u kryen me të dhëna sintetike. Testet e aplikacionit përdorën databazë të izoluar nga `klinika_db`.
-
-## Struktura
-
-```text
-menaxhimi-klinikave/
-├── index.php
-├── pacientet/
-│   ├── lista.php
-│   ├── shto.php
-│   ├── ndrysho.php
-│   └── fshi.php
-├── mjeket/
-│   ├── lista.php
-│   ├── shto.php
-│   ├── ndrysho.php
-│   └── fshi.php
-├── terminet/
-│   ├── lista.php
-│   ├── shto.php
-│   ├── ndrysho.php
-│   ├── anulo.php
-│   └── fshi.php
-├── includes/
-│   ├── bootstrap.php
-│   ├── database_notice.php
-│   ├── footer.php
-│   ├── functions.php
-│   └── header.php
-├── config/
-│   ├── app.php
-│   └── database.php
-├── assets/
-│   ├── css/style.css
-│   └── js/script.js
-└── database/
-    ├── klinika_db.sql
-    ├── seed_demo.sql
-    └── migrations/001_add_mjeku_email.sql
-```
-
-Format validohen në server. Veprimet përdorin PDO prepared statements dhe token CSRF; output-i HTML kalohet përmes funksionit `h()`.
+## Udhëzime instalimi (XAMPP / Apache + MySQL)
+1. Kopjoni dosjen `menaxhimi-klinikave` brenda `htdocs/` të XAMPP (ose përdorni rrënjën e serverit Apache).
+2. Hapni **phpMyAdmin** (`http://localhost/phpmyadmin`).
+3. Për instalim të ri: importoni `database/klinika_db.sql` dhe më pas `database/seed_demo.sql`.
+4. Për databazë ekzistuese nga versioni i mëparshëm: ekzekutoni migrimin `database/migrations/005_klinika_im_modules.sql`.
+5. Përditësoni kredencialet e MySQL te `config/database.php` nëse keni fjalëkalim për `root`.
+6. Hapni aplikacionin në shfletues: `http://localhost/menaxhimi-klinikave/setup.php` për të krijuar llogarinë e parë Admin.
