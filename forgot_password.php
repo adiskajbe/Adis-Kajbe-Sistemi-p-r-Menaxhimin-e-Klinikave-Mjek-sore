@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'X-Mailer' => 'Klinika PHP/' . PHP_VERSION,
                         ];
                         if (!mail($user['email'], 'Rivendosja e fjalëkalimit', $message, $headers)) {
-                            error_log('Dërgimi i email-it për rivendosjen e fjalëkalimit dështoi. Kontrolloni SMTP/mail në php.ini.');
+                            error_log('Dërgimi i email-it për rivendosjen e fjalëkalimit dështoi.');
                         }
                     } else {
                         error_log('APP_MAIL_FROM nuk është konfiguruar; email-i i rivendosjes nuk u dërgua.');
@@ -60,14 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="sq">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rivendos fjalëkalimin | Menaxhimi i Klinikave</title>
-    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/style.css">
+    <title>Rivendos fjalëkalimin | Klinika</title>
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/tokens.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/layout.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/components.css">
+    <link rel="stylesheet" href="<?= h(APP_BASE_URL) ?>/assets/css/pages.css">
 </head>
 <body class="auth-page">
 <main class="auth-layout auth-layout-setup">
     <section class="auth-visual" aria-label="Siguria e llogarisë">
         <a class="auth-brand" href="<?= h(APP_BASE_URL) ?>/login.php"><span class="auth-brand-mark" aria-hidden="true">+</span><span><strong>Klinika</strong><small>Menaxhimi i vizitave</small></span></a>
-        <div class="auth-visual-copy"><span class="auth-kicker"><span class="auth-kicker-dot"></span> SIGURI E LLOGARISË</span><h1>Riktheni qasjen në llogari.</h1><p>Do t'ju dërgojmë udhëzimet në email-in e regjistruar.</p></div>
+        <div class="auth-visual-copy"><span class="auth-kicker">SIGURI E LLOGARISË</span><h1>Riktheni qasjen në llogari.</h1><p>Do t'ju dërgojmë udhëzimet në email-in e regjistruar.</p></div>
         <div class="auth-visual-footer"><span class="auth-shield" aria-hidden="true">✓</span> Lidhja e rivendosjes skadon pas 30 minutash</div>
     </section>
     <section class="auth-panel"><div class="auth-panel-inner">
@@ -79,12 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
         <form class="auth-form" action="<?= h(APP_BASE_URL) ?>/forgot_password.php" method="post">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-            <div class="auth-field"><label for="email">Email-i i llogarisë</label><input id="email" name="email" type="email" value="<?= h($email) ?>" autocomplete="email" maxlength="190" required></div>
+            <div class="auth-field"><label for="email">Email-i i llogarisë</label><div class="auth-input-wrap"><span class="auth-input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><input id="email" name="email" type="email" value="<?= h($email) ?>" autocomplete="email" maxlength="190" required></div></div>
             <button class="button button-primary auth-submit" type="submit">Dërgo lidhjen <span aria-hidden="true">→</span></button>
         </form>
         <?php endif; ?>
         <footer class="auth-footer"><a href="<?= h(APP_BASE_URL) ?>/login.php">Kthehu te kyçja</a></footer>
     </div></section>
 </main>
-<script src="<?= h(APP_BASE_URL) ?>/assets/js/script.js" defer></script>
+<script src="<?= h(APP_BASE_URL) ?>/assets/js/app.js" defer></script>
 </body></html>

@@ -1,6 +1,3 @@
--- Lidh një llogari pacienti me profilin përkatës, pa ndryshuar të dhënat ekzistuese.
--- Ekzekutojeni pasi të jenë ekzekutuar migrimet 002 dhe 003.
-
 SET @patient_id_type = (
   SELECT COLUMN_TYPE
   FROM information_schema.COLUMNS

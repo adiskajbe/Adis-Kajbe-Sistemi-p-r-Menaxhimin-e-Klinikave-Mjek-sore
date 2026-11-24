@@ -1,6 +1,3 @@
--- Shton role, status, detyrim ndryshimi fjalëkalimi dhe tabelat e sigurisë.
--- Ekzekutojeni një herë në klinika_db, pasi të ekzistojë tabela perdorues.
-
 SET @has_role = (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'perdorues' AND COLUMN_NAME = 'role'

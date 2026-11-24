@@ -1,7 +1,3 @@
--- Shton llogaritë e hyrjes pa ndryshuar tabelat ekzistuese të klinikës.
--- Ekzekutojeni pasi të jetë importuar klinika_db.sql.
--- Mjekët ekzistues mund të kenë id INT të shenjëzuar ose të pashenjëzuar.
--- Përdor llojin real të kolonës që lidhja e huaj të përputhet në të dy skemat.
 SET @doctor_id_type = (
   SELECT COLUMN_TYPE
   FROM information_schema.COLUMNS
