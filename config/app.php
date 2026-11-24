@@ -10,7 +10,9 @@ if ($appRoot !== false && $documentRoot !== false) {
     $normalizedRoot = strtolower(str_replace('\\', '/', $appRoot));
     $normalizedDocumentRoot = rtrim(strtolower(str_replace('\\', '/', $documentRoot)), '/');
 
-    if (strpos($normalizedRoot, $normalizedDocumentRoot . '/') === 0) {
+    if ($normalizedRoot === $normalizedDocumentRoot) {
+        $baseUrl = '';
+    } elseif (strpos($normalizedRoot, $normalizedDocumentRoot . '/') === 0) {
         $relativePath = substr($appRoot, strlen($documentRoot));
         $urlSegments = array_filter(explode('/', trim(str_replace('\\', '/', $relativePath), '/')), 'strlen');
         $baseUrl = '/' . implode('/', array_map('rawurlencode', $urlSegments));
@@ -23,4 +25,8 @@ if ($appRoot !== false && $documentRoot !== false) {
 
 if (!defined('APP_BASE_URL')) {
     define('APP_BASE_URL', rtrim($baseUrl, '/'));
+}
+
+if (!defined('APP_LOCAL_AUTH_BYPASS')) {
+    define('APP_LOCAL_AUTH_BYPASS', false); // Set true only for temporary localhost development.
 }
