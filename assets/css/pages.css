@@ -1,0 +1,494 @@
+/* Analitika dhe grafiqet */
+.analytics-grid,
+.dashboard-split,
+.profile-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.chart-host {
+    min-height: 210px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.clinic-bar-svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.clinic-bar-rect {
+    fill: var(--border-strong);
+    transition: fill 0.15s ease;
+}
+
+.clinic-bar-rect.is-today {
+    fill: var(--brand-primary);
+}
+
+.clinic-bar-label {
+    font-size: 11px;
+    fill: var(--text-secondary);
+    font-weight: 600;
+}
+
+.clinic-bar-sub {
+    font-size: 10px;
+    fill: var(--text-muted);
+}
+
+.clinic-bar-val {
+    font-size: 11px;
+    fill: var(--text-primary);
+    font-weight: 700;
+}
+
+.status-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.status-row-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.86rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.status-track {
+    height: 10px;
+    background: var(--bg-surface-muted);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.status-bar-svg {
+    width: 100%;
+    height: 10px;
+    display: block;
+}
+
+.tone-teal { fill: #0f766e; }
+.tone-sky { fill: #0284c7; }
+.tone-amber { fill: #d97706; }
+.tone-emerald { fill: #16a34a; }
+.tone-rose { fill: #dc2626; }
+
+/* Filtrat dhe Kalendari Javor */
+.list-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.view-switch {
+    display: inline-flex;
+    background: var(--bg-surface-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+}
+
+.view-option {
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.view-option.is-active {
+    background: var(--bg-surface);
+    color: var(--brand-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-summary {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.appointment-filters {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 18px;
+}
+
+.appointment-filters.doctor-filters {
+    grid-template-columns: 1.5fr 1fr 1fr 1fr auto;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-clear {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.calendar-day {
+    background: var(--bg-surface-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    min-height: 220px;
+}
+
+.calendar-day.is-today {
+    border-color: var(--brand-primary);
+    background: #f0fdfa;
+}
+
+.calendar-day h2 {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.84rem;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.calendar-appointments {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.calendar-appointment {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--brand-primary);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.82rem;
+}
+
+.status-border-konfirmuar { border-left-color: #0284c7; }
+.status-border-ne_pritje { border-left-color: #d97706; }
+.status-border-perfunduar { border-left-color: #16a34a; }
+.status-border-anuluar { border-left-color: #dc2626; }
+
+.calendar-empty {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 18px 6px;
+}
+
+/* Profili, Kartela EHR dhe Fatura */
+.detail-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    margin: 0;
+}
+
+.detail-list dt {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.detail-list dd {
+    margin: 2px 0 0;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+}
+
+.text-alert {
+    color: var(--status-rose-text);
+    font-weight: 600;
+}
+
+.ehr-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ehr-entry {
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--brand-primary);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    background: var(--bg-surface-muted);
+}
+
+.ehr-entry-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.ehr-date {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.ehr-entry h3 {
+    font-size: 1rem;
+    margin-top: 2px;
+}
+
+.ehr-vitals-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 10px;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+}
+
+.ehr-rx {
+    margin-top: 8px;
+    font-size: 0.88rem;
+}
+
+.doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 18px;
+}
+
+.doc-id {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1rem;
+    background: var(--brand-primary-soft);
+    color: var(--brand-primary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+}
+
+.doc-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.vitals-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.vital-box {
+    background: var(--bg-surface-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vital-box span {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.vital-box strong {
+    font-size: 1.05rem;
+}
+
+.doc-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.doc-sections h3 {
+    font-size: 0.92rem;
+    color: var(--brand-primary);
+    margin-bottom: 4px;
+}
+
+.summary-label {
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* Autentifikimi */
+.auth-heading {
+    margin-bottom: 20px;
+}
+
+.auth-heading h2 {
+    font-size: 1.45rem;
+    margin-bottom: 4px;
+}
+
+.auth-heading p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.auth-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.auth-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.auth-input-wrap input {
+    width: 100%;
+    padding: 10px 12px 10px 38px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+}
+
+.password-wrap input {
+    padding-right: 68px;
+}
+
+.auth-input-icon {
+    position: absolute;
+    left: 11px;
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.auth-input-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    background: transparent;
+    border: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    cursor: pointer;
+    padding: 4px 6px;
+}
+
+.auth-submit {
+    width: 100%;
+    padding: 11px 16px;
+    margin-top: 4px;
+}
+
+.auth-field-hint,
+.auth-security-note,
+.auth-optional,
+.auth-help {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.auth-footer {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.auth-empty-state {
+    text-align: center;
+    padding: 12px 0;
+}
+
+.auth-empty-icon {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 12px;
+    border-radius: var(--radius-pill);
+    background: var(--brand-primary-soft);
+    color: var(--brand-primary);
+    display: grid;
+    place-items: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.admin-role-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.admin-role-form.form-grid {
+    display: grid;
+}
+
+@media (max-width: 960px) {
+    .analytics-grid,
+    .dashboard-split,
+    .profile-summary-grid,
+    .doc-meta-grid,
+    .appointment-filters,
+    .appointment-filters.doctor-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .vitals-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
